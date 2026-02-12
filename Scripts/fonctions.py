@@ -1,0 +1,45 @@
+# Le but de ce fichier est de mettre toutes les fonctions qu'on peut potentiellement appelés pour faire tourner nos futur codes
+# Ensuite il suffira de faire un appelle du fichier et de la fonction qu nous interesse
+# Exemple avec cette fonction test que j'appelle dans le code Sedimentation.py
+
+### Imports nécessaires ###
+
+
+from math import *
+import time
+import numpy as np
+import matplotlib.pyplot as plt
+
+### Définitions des classes/fonctions ###
+
+
+
+class InitialCond :
+    def __init__(self, nb_grid) :
+        if nb_grid == "ARO" : 
+            vertical_grid = [5.00148256575414, 16.7609146275979, 31.9999856716034, 50.6506387418972, 72.6448134875948, 97.9144556307367, 126.391508411840, 158.007915671418, 192.695621996127, 230.386571302649, 271.012706897240, 314.505973414367, 360.798314810016, 409.821674828922, 461.507997847950, 515.890042408161, 573.093937517738, 633.231198491812, 696.398736766220, 762.678848044096, 832.139215500780, 904.832909766711, 980.798389785428, 1060.05950095623, 1142.62547636213, 1228.49093654830, 1317.63588971212, 1410.02573054417, 1505.73432230725, 1604.93984760156, 1707.79812299161, 1814.44258334521, 1924.98428740911, 2039.51193175523, 2280.76794378598, 2407.56182949566, 2538.47269089309, 2673.47735336959, 2812.53026865253, 2955.56351459630, 3102.48360541930, 3253.19498943504, 3407.62661862652, 3565.73195622143, 3727.48898443499, 3892.90019410005, 4061.99258757885, 4234.81767907587, 4411.45149612596, 4591.99457746971, 4776.57197432233, 4965.33325159684, 5158.45249292134, 5356.12828712931, 5558.65852457596, 5766.45816179863, 5980.00284181189, 6199.82890110527, 6426.53336977965, 6660.77397670184, 6903.26915353359, 7154.79804227343, 7416.20049682756, 7688.37709125546, 7972.28912861375, 8268.07660797884, 8575.22917035383, 8893.62412699775, 9223.52646472597, 9565.58886389478, 9920.85173976858, 10290.7432801852, 10677.0795176319, 11082.0546910758, 11510.3223903101, 11966.1795634141, 12454.7528314299, 12982.0128918015, 13554.6557230282, 14180.1025765563, 14866.4999945363, 15627.4731252487, 16485.0471290191, 17467.8152385289, 18610.9387773901, 19955.6070022098, 21550.0160473017, 23450.1477297912, 34461.1214067193]
+        else :
+            height_grid = 12e3
+            self.vertical_grid = np.linspace(1/nb_grid * height_grid, height_grid, nb_grid)
+
+    def grid () : 
+        return self.vertical_grid
+
+initial_conds = InitialCond(nb_grid = 50)
+print (initial_conds.grid())
+
+
+class eq :
+    def test() :
+        return 'toto'
+    def Gamma(diametre, alpha, lanbda, nu) :
+        return (alpha/gamma(diametre))*(lanbda**(alpha*nu))*(diametre**(alpha*(nu-1)))*exp(-((lanbda*diametre)**alpha))
+    def G(p, nu, alpha) :
+        return (gamma(nu+p/alpha)/gamma(nu))
+    def Landa(rho, r, a, N, b, nu, alpha):
+        return (((rho*r)/(a*N*eq.G(b)))**(-1/b))
+    def Masse(diametre, a, b):
+        return (a*(diametre**b))
+    def Vitesse(diametre, c, d):
+        return(c*(diametre**d))
+    

@@ -12,6 +12,7 @@ import os
 import json
 import numpy
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from pppy import PPPYComp
 from pppy_sedimentation_PHYEX import pppy_sedimentation_PHYEX
@@ -86,10 +87,14 @@ plot3 = 'evol', {'only_param_tag': [sedim_SREF.tag], **confplt}
 fig, plots = comp.plot_multi((3, 1), [plot1, plot2, plot3])
 figs.append(fig)
 
+plt.savefig(Path('../fig/figure1'))
+
 #cum_r for the different schemes
 plot = 'evol', {'var_names': ['cum_r']}
 fig, plots = comp.plot_multi((1, 1), [plot])
 figs.append(fig)
+
+plt.savefig(Path('../fig/figure2'))
 
 plt.show()
 for fig in figs:
