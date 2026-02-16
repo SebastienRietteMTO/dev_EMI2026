@@ -1,0 +1,4 @@
+pppy
+f90nml
+matplotlib==3.7.5
+scipy

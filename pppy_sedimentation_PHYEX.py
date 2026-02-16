@@ -32,7 +32,10 @@ class pppy_sedimentation_PHYEX(pppy.PPPY):
 
         self._init = None
         self._close = None
-        self._param = None
+        self._param_ice4 = None
+        self._param_lima = None
+        self.ccloud = None
+        self.nml = None
 
     def setup(self, init_state, duration):
         """
@@ -47,7 +50,8 @@ class pppy_sedimentation_PHYEX(pppy.PPPY):
         #through a PPPYComp instance).
 
         try:
-            from pyphyex import PYICE4_SEDIMENTATION, PYINI_PHYEX, close
+            from pyphyex import PYICE4_SEDIMENTATION, PYLIMA_SEDIMENTATION, \
+                                PYINI_PHYEX, close
         except ModuleNotFoundError:
             logging.error("The module pyphyex has not been found. " + \
                           "This module can be built with the PHYEX package " + \
@@ -57,16 +61,21 @@ class pppy_sedimentation_PHYEX(pppy.PPPY):
 
         self._init = PYINI_PHYEX
         self._close = close
-        self._param = PYICE4_SEDIMENTATION
+        self._param_ice4 = PYICE4_SEDIMENTATION
+        self._param_lima = PYLIMA_SEDIMENTATION
 
         #Setup
         with tempfile.NamedTemporaryFile() as namel:
-            nml = f90nml.read(namel.name)
+            self.nml = f90nml.read(namel.name)
             for k, v in json.loads(self._options['namel']).items():
-                nml[k] = v
-            nml.write(namel.name, force=True)
+                self.nml[k] = v
+            self.nml.write(namel.name, force=True)
+            if 'NAM_PARAM_LIMA' in self.nml:
+                self.ccloud = 'LIMA'
+            else:
+                self.ccloud = 'ICE3'
             self._init('AROME', 33, namel.name, False, 20, 0, 1, self._dt, 20.,
-                       'ICE3', 'EDKF', 'TKEL',
+                       self.ccloud, 'EDKF', 'TKEL',
                        LDCHANGEMODEL=True, LDDEFAULTVAL=True, LDREADNAM=True, LDCHECK=True,
                        KPRINT=0, LDINIT=True)
             os.remove('fort.20')
@@ -117,6 +126,13 @@ class pppy_sedimentation_PHYEX(pppy.PPPY):
         PRT[4] = ps['rs']
         PRT[5] = ps['rg']
         PRS = PRT / timestep
+        PCT = numpy.ndarray((KRR, NKT, NIJT))
+        PCT[1] = ps['nc']
+        PCT[2] = ps['nr']
+        PCT[3] = ps['ni']
+        PCT[4] = ps['ns']
+        PCT[5] = ps['ng']
+        PCS = PCT / timestep
         PTHS = ps['Theta'] / timestep
         rhodj = ps['dzz'] * PRHODREF
 
@@ -142,20 +158,35 @@ class pppy_sedimentation_PHYEX(pppy.PPPY):
         PEFIELDW = numpy.zeros((NKT, NIJT))
         PCONC3D = numpy.zeros((NKT, NIJT))
 
-        result = self._param(NIJT, NKT, 1, 0, False, False, timestep, KRR,
-                             ps['dzz'], 0., PLVFACT, PLSFACT,
-                             PRHODREF, ps['P'], ps['Theta'],
-                             T, rhodj, PTHS, PRT, PRS, PCONC3D,
-                             PQCT, PQRT, PQIT, PQST, PQGT,
-                             PQCS, PQRS, PQIS, PQSS, PQGS,
-                             PEFIELDW, 0, PSEA=ps['sea'],
-                             PTOWN=ps['town'], missingOUT=['PFPR', 'PINPRH'])
-
         inst = {}
-        (PTHS, PRS, inst['c'], inst['r'], inst['s'],
-         inst['g'], _, _, _, _, _) = result
-
         ns = {}
+        if self.ccloud == 'LIMA':
+            for i, spec in enumerate(['rc', 'rr', 'ri', 'rs', 'rg']):
+                # PCT/PRT/PCS/PRS are declared with KRR (first index is for vapor)
+                # cloud (i=0) is the second array, indexed 1 in python and 2 in FORTRAN
+                KISHAPE = 1
+                result = self._param_lima(NIJT, NKT, 1, 0,
+                                          'L' if spec in ('rc', 'rr') else 'I',
+                                          self.nml['NAM_PARAM_LIMA'][f'NMOM_{spec[1].upper()}'],
+                                          i + 2, KISHAPE, 0, timestep, False, ps['dzz'],
+                                          PRHODREF, 0., ps['P'], T, numpy.zeros((NKT, NIJT)),
+                                          numpy.zeros((NKT, NIJT)), PRS[i + 1], PCS[i+ 1],
+                                          missingOUT=['PQS'])
+                (_, _, _, PRS[i + 1], PCS[i + 1], inst[spec[1]], _) = result
+                ns[f'n{spec[1]}'] = PCS[i + 1] * timestep
+        else:
+            result = self._param_ice4(NIJT, NKT, 1, 0, False, False, timestep, KRR,
+                                      ps['dzz'], 0., PLVFACT, PLSFACT,
+                                      PRHODREF, ps['P'], ps['Theta'],
+                                      T, rhodj, PTHS, PRT, PRS, PCONC3D,
+                                      PQCT, PQRT, PQIT, PQST, PQGT,
+                                      PQCS, PQRS, PQIS, PQSS, PQGS,
+                                      PEFIELDW, 0, PSEA=ps['sea'],
+                                      PTOWN=ps['town'], missingOUT=['PFPR', 'PINPRH'])
+
+            (PTHS, PRS, inst['c'], inst['r'], inst['s'],
+             inst['g'], _, _, _, _, _) = result
+
         ns['rv'] = PRS[0] * timestep
         ns['rc'] = PRS[1] * timestep
         ns['rr'] = PRS[2] * timestep
