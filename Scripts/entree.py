@@ -20,7 +20,7 @@ def check_model(model):
     nothing if compliant, 
     error message otherwise
     """
-    poss_model = ['Box_Lagrangien','Semi_Lagrangian']
+    poss_model = ['Box_Lagrangien','Semi_Lagrangian','EULE','EULE2','STAT']
     if model not in poss_model:
         raise argparse.ArgumentTypeError(f"{model} is not an accepted model, {poss_model} are.")
     return model
@@ -97,7 +97,7 @@ parser = argparse.ArgumentParser(
 
 # We collect the different options selected by the user.
 
-parser.add_argument('-m','--model', help = "Choose between Box_Lagrangien and Semi_Lagrangien Scheme.", default = "Box_Lagrangien", type=check_model)
+parser.add_argument('-m','--model', help = "Choose between Box_Lagrangien, Semi_Lagrangien, EULE, EULE2 and STAT schemes.", default = "Box_Lagrangien", type=check_model)
 parser.add_argument('-s','--type_advance',help="Choose between Step_Forward and Step_By_Step", default="Step_By_Step",type=check_advance)
 parser.add_argument('-n','--number_stitches', help = "Pick a positif integer for the number of stitches", default = 100 , type=check_numb)
 parser.add_argument('-d','--deformable', help = "Choose bewteen Yes and No (deformable or not)", default="No", type=check_deformable)

@@ -209,14 +209,16 @@ class InitialCond :
         if mode == "gauss" :
             concentration_profile = [gaussienne(Hmax, sigma, self.grid[i]) for i in range(nb_grid)]
 
+        self.rho_r_profile = np.array(concentration_profile) * rho_r
+
         eq=Eq(esp)
         lam = eq.Lanbda (rho_r, N)
         dmin, dmax = eq.Dmin_Dmax(lam)
         self.bin_concentration = eq.Classe_D (nb_classes, dmin, dmax, N, lam) # division in n bins
-        
+
         bin_profile = [np.array(concentration_profile) * self.bin_concentration[i][1] for i in range(len(self.bin_concentration))] # computinng of the n bin profiles
         data_vars1 = {f"concentration_bin_{ind_bin+1}" : ("level", bin_profile[ind_bin]) for ind_bin in range(len(self.bin_concentration))}
-        
+
         data_vars2 = {f"diameter_bin_{ind_bin+1}" : self.bin_concentration[ind_bin][0] for ind_bin in range(len(self.bin_concentration))} # addition of the diameters
         data_vars1.update(data_vars2)
 
